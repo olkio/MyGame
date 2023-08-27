@@ -1,6 +1,7 @@
 import pygame
 import sys
 import random
+import time
 
 pygame.init()
 pygame.font.init()
@@ -24,6 +25,9 @@ sausages_rect = sausages_image.get_rect()
 
 bg_music = pygame.mixer.Sound('asserts/bg_sound.mp3')
 interaction_sound = pygame.mixer.Sound('asserts/chavk.ogg')
+
+start_time = time.time()
+timer_duration = 10
 
 font = pygame.font.Font(None, 36)  # Размер шрифта 36
 
@@ -66,11 +70,15 @@ def feeding_the_cat():
     global cat_image, sausages_image
     cat = Cat(10, 300, 100, 60, cat_image)
     sausages = make_new_sausages()
-    score = 0
+    sausages_eaten = 0
     bg_music.play(-1)
-    pygame.mixer.music.set_volume(0.3)
+    start_time = time.time()
 
     while True:
+        current_time = time.time()
+        elapsed_time = current_time - start_time
+        remaining_time = max(timer_duration - elapsed_time, 0)
+
         events = pygame.event.get()
         for event in events:
             if event.type == pygame.QUIT:
@@ -86,11 +94,36 @@ def feeding_the_cat():
             interaction_sound.play()
             pygame.time.delay(200)
             sausages = make_new_sausages()
-            score += 1
+            sausages_eaten += 1
 
-        # Отображение счета
-        score_text = font.render("Score: " + str(score), True, (255, 255, 255))
-        display.blit(score_text, (10, 10))  # Позиция для отображения счета
+        score_text = font.render("Score: " + str(sausages_eaten), True, (255, 255, 255))
+        display.blit(score_text, (10, 10))
+
+        timer_text = font.render("Time: {:.1f}".format(remaining_time), True, (255, 255, 255))
+        display.blit(timer_text, (display_width - 100, 10))
+
+        if remaining_time <= 0:
+            bg_music.stop()
+            
+            if sausages_eaten >= 5:
+                message = "Котик сыт!"
+                break
+            else:
+                message = "Котик голодный!"
+
+            font_big = pygame.font.Font(None, 48)
+            message_text = font_big.render(message, True, (255, 255, 255))
+            message_rect = message_text.get_rect(center=(display_width // 2, display_height // 2))
+
+            display.blit(message_text, message_rect)
+            pygame.display.update()
+            pygame.time.delay(3000)  # Отобразить сообщение в течение 3 секунд
+
+            sausages_eaten = 0
+            start_time = time.time()
+            bg_music.play(-1)
+
+
 
         clock.tick(FPS)
         pygame.display.update()
